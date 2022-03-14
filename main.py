@@ -1,6 +1,7 @@
 from typing import Optional
 from fastapi import FastAPI
 from pydantic import BaseModel
+import uvicorn
 
 app = FastAPI()
 
@@ -32,3 +33,4 @@ def blog_comments(blog_id:int, limit=10):
 @app.post('/blog')
 def create_blog(blog:Blog):
     return blog
+
