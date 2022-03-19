@@ -59,3 +59,12 @@ def blog_update(id,request:schemes.Blog, response: Response, db:Session = Depend
     db.commit()
     return "updated the title"
 
+
+# Creating the users in the Database 
+@app.post('/user')
+def create_user(request:schemes.User,db:Session = Depends(get_db)):
+    new_user = models.User(name=request.name,email=request.email,password=request.password)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user )
+    return new_user
