@@ -1,4 +1,4 @@
-from multiprocessing import synchronize
+from typing import List
 from fastapi import Depends, FastAPI,status, Response,HTTPException
 from . import schemes,models
 from http import HTTPStatus
@@ -15,12 +15,11 @@ def get_db():
     finally:
         db.close()
 
-@app.get('/blog')
+@app.get('/blog',response_model=List[schemes.ShowBlog])
 def get_all_blogspot(db:Session = Depends(get_db)):
     blogs = db.query(models.Blog).all()
     return blogs
     
-
 
 @app.post('/blog/', status_code=status.HTTP_201_CREATED)
 def create(request:schemes.Blog, db:Session = Depends(get_db)):
@@ -30,7 +29,7 @@ def create(request:schemes.Blog, db:Session = Depends(get_db)):
     db.refresh(new_blog)
     return new_blog
 
-@app.get('/blog/{id}', status_code=status.HTTP_200_OK)
+@app.get('/blog/{id}', status_code=status.HTTP_200_OK,response_model=schemes.ShowBlog)
 def get_blog(id,response: Response, db:Session = Depends(get_db)):
     blog = db.query(models.Blog).filter(models.Blog.id == id).first()
     if not blog:
@@ -58,5 +57,5 @@ def blog_update(id,request:schemes.Blog, response: Response, db:Session = Depend
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"the blog {id} you want to update doesnot exist")
     blog.update(request)
     db.commit()
-    return " updated the title"
+    return "updated the title"
 

@@ -27,6 +27,6 @@ this will install the dependencies
 # run the app project
 To run the application 
 type 
-`uvicorn main:app --reload` 
+`uvicorn blog.main:app --reload` 
 
 this will fire up the application 
