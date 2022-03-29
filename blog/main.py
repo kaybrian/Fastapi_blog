@@ -2,11 +2,14 @@ from typing import List
 from fastapi import Depends, FastAPI,status, Response,HTTPException
 from . import schemes,models
 from http import HTTPStatus
+from passlib.context import CryptContext
 from .database import engine, SessionLocal
 from sqlalchemy.orm import Session
 
 models.Base.metadata.create_all(engine)
 app = FastAPI()
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 
 def get_db():
     db = SessionLocal()
@@ -63,8 +66,9 @@ def blog_update(id,request:schemes.Blog, response: Response, db:Session = Depend
 # Creating the users in the Database 
 @app.post('/user')
 def create_user(request:schemes.User,db:Session = Depends(get_db)):
-    new_user = models.User(name=request.name,email=request.email,password=request.password)
+    hash_password = pwd_context.hash(request.password)
+    new_user = models.User(name=request.name,email=request.email,password=hash_password)
     db.add(new_user)
     db.commit()
-    db.refresh(new_user )
+    db.refresh(new_user )  
     return new_user
