@@ -1,58 +1,39 @@
+from sys import prefix
 from fastapi import APIRouter, Depends, HTTPException,status,Response
 from typing import List
 from .. import schemes,models
 from http import HTTPStatus
 from ..database import engine, get_db
 from sqlalchemy.orm import Session
-
+from ..repo import blog
 models.Base.metadata.create_all(engine)
 
-rounter = APIRouter()
+rounter = APIRouter(
+    prefix="/blog",
+    tags=['blog'],
+)
 
 
-@rounter.get('/blog',response_model=List[schemes.ShowBlog],tags=['blog'])   
+@rounter.get('/',response_model=List[schemes.ShowBlog])   
 def get_all_blogspot(db:Session = Depends(get_db)):
-    blogs = db.query(models.Blog).all()
-    return blogs
+    return blog.get_all(db)
     
-@rounter.post('/blog/', status_code=status.HTTP_201_CREATED,tags=['blog'])
+@rounter.post('/', status_code=status.HTTP_201_CREATED)
 def create(request:schemes.Blog, db:Session = Depends(get_db)):
-    new_blog = models.Blog(title=request.title, body=request.body, user_id=1)  
-    db.add(new_blog)
-    db.commit()
-    db.refresh(new_blog)
-    return new_blog
+    return blog.create(request,db)
 
 
+@rounter.get('/{id}', status_code=status.HTTP_200_OK,response_model=schemes.ShowBlog)
+def get_blog(id:int,response: Response, db:Session = Depends(get_db)):
+    return blog.show(id,db)
 
 
-@rounter.get('/blog/{id}', status_code=status.HTTP_200_OK,response_model=schemes.ShowBlog,tags=['blog'])
-def get_blog(id,response: Response, db:Session = Depends(get_db)):
-    blog = db.query(models.Blog).filter(models.Blog.id == id).first()
-    if not blog:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"Blog with ID of {id} is not found")
-        # response.status_code = status.HTTP_404_NOT_FOUND
-        # return {"Datail":f"Blog with ID of {id} is not found"}
-    return blog
+@rounter.delete('/{id}', status_code=HTTPStatus.NO_CONTENT)
+def delete_blog(id:int,response: Response, db:Session = Depends(get_db)):
+    return blog.destroy(id,db)
 
 
-@rounter.delete('/blog/{id}', status_code=HTTPStatus.NO_CONTENT,tags=['blog'])
-def delete_blog(id,response: Response, db:Session = Depends(get_db)):
-    blog = db.query(models.Blog).filter(models.Blog.id == id)
-    if not blog.first():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"the blog {id} you want to update doesnot exist")
-    blog.delete(synchronize_session=False)    
-    db.commit()
-    return Response(status_code=HTTPStatus.NO_CONTENT.value)
-
-
-
-@rounter.put('/bog/{id}', status_code=status.HTTP_202_ACCEPTED,tags=['blog'])
-def blog_update(id,request:schemes.Blog, response: Response, db:Session = Depends(get_db)):
-    blog = db.query(models.Blog).filter(models.Blog.id == id)
-    if not blog.first():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"the blog {id} you want to update doesnot exist")
-    blog.update(request)
-    db.commit()
-    return "updated the title"
+@rounter.put('/{id}', status_code=status.HTTP_202_ACCEPTED)
+def blog_update(id:int,request:schemes.Blog, response: Response, db:Session = Depends(get_db)):
+    return blog.update(id,request,db)
 
