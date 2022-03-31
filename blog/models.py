@@ -18,3 +18,4 @@ class User(Base):
     email = Column(String(100), nullable=False)
     password = Column(String(100), nullable=False)
     blogs = relationship('Blog', back_populates='author')
+
